@@ -1,0 +1,117 @@
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+
+
+
+public class BattleServer implements MessageListener {
+	
+	ServerSocket welcomeSocket;
+	Game game;
+	ConnectionInterface connect;
+	String message;
+	HashMap<String,ConnectionInterface> connections;
+	List<Thread> threads;
+	public final static int BOARD_SIZE=10;
+	public final static int portnum=9998;
+	
+	public BattleServer(int port, int size) throws IOException{
+		welcomeSocket = new ServerSocket(port);
+		game= new Game(size);
+		threads = new LinkedList<Thread>();
+		message="";
+		connections= new HashMap();
+	}
+	
+	public BattleServer(int port) throws IOException{
+		this(port,BOARD_SIZE);
+	}
+	
+	public BattleServer() throws IOException{
+		this(portnum,BOARD_SIZE);
+	}
+
+	public void listen() throws IOException, InterruptedException {
+		boolean t=true;
+        while(connections.size()!=2){
+			ConnectionInterface connect = new ConnectionInterface(welcomeSocket.accept(), this);
+			Thread thread = new Thread(connect);
+            thread.start();
+            while(message.equals("")){
+                          }
+            System.out.println(message);
+			game.addPlayers(message);
+			connections.put(message, connect);
+            System.out.println(message);
+            message="";
+		}
+		while(!connections.isEmpty()){
+            toAll("It is "+game.getCurrentPlayer()+"'s turn");
+            boolean b=true;
+            while(b){
+                b=false;
+            while(message.equals("")){    
+                System.pause(10);
+            }
+				try{
+                    System.out.println("try");
+					String[] commands = message.split(" ");
+                    System.out.println(commands.length+"");
+					if(!game.makeChoice(commands[0], commands[1], commands[2], commands[3])){
+						connect.pass("Invalid Move enter a new move");
+					}
+                    message="";
+                    b=true;
+				}catch(ArrayIndexOutOfBoundsException e){
+					String[] commands = message.split(" ");
+                    try{
+					if(!game.makeChoice(commands[0], commands[1], "", "")){
+						connect.pass("Invalid Move enter a new move");
+					}
+                    message="";
+                    b=true;
+                    }catch(ArrayIndexOutOfBoundsException ex){
+                        connect.pass("Invalid move enter a new move");
+                        b=true;
+                        message="";
+                    }
+				}
+            }
+        }
+			
+		
+	}
+	
+	public void toClient(String message, ConnectionInterface source){
+		source.pass(message);
+	}
+	
+	public void toAll(String message){
+		for(ConnectionInterface temp: connections.values()){
+			temp.pass(message);
+		}
+	}
+	
+	@Override
+	public void messageReceived(String message, MessageSource source) {
+		this.message=message;
+		if(source instanceof ConnectionInterface){
+			connect = (ConnectionInterface)source;
+		}
+	}
+
+	@Override
+	public void sourceClosed(MessageSource source) {
+		if(source instanceof ConnectionInterface){
+			ConnectionInterface temp = (ConnectionInterface)source;
+			temp.close();
+		}
+	}
+
+}

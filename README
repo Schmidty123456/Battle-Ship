@@ -1,0 +1,15 @@
+Logan Schmidt
+Andrew McDaniels
+
+Creates a game of battleship for 2 people 
+The game begins when two valid clients connect to server.
+Will prompt for user input to play game.
+Commands: attack <player> <row> <column>
+          show <player>
+          quit <player>
+Each player will take their turn before they are able to do a command.
+Does not exit Clients at all
+
+Runs Server: java BattleShipDriver <port> <grid size>
+Runs Client: java BattleDriver <host> <port> <name>
+
